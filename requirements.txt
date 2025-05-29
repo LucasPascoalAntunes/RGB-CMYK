@@ -1,0 +1,25 @@
+
+# Interface gráfica (normalmente já incluída com Python)
+tkinter
+
+# Biblioteca padrão para matemática (já incluída)
+math
+
+# Versão mínima requerida: Python 3.6+
+
+# Nota: Este programa usa apenas bibliotecas padrão do Python
+# tkinter pode precisar ser instalado separadamente em alguns sistemas Linux:
+# Ubuntu/Debian: sudo apt-get install python3-tk
+# Fedora: sudo dnf install tkinter
+# CentOS: sudo yum install tkinter
+# macOS: brew install python-tk (se necessário)
+# Windows: já incluído na instalação padrão do Python
+
+# Funcionalidades incluídas:
+# - Interface gráfica moderna com Tkinter
+# - Conversão RGB para CMYK
+# - 19 cores predefinidas
+# - Modo de atualização automática
+# - Validação de entrada em tempo real
+# - Cópia de códigos hexadecimais
+# - Geração de cores aleatórias
