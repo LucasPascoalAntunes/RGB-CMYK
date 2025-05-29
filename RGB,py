@@ -1,0 +1,371 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+import math
+
+BG_COLOR = "#F8F9FA"
+FRAME_BG_COLOR = "#FFFFFF"
+INPUT_BG_COLOR = "#FFFFFF"
+BUTTON_FG_COLOR = "#FFFFFF"
+BUTTON_BG_COLOR = "#007BFF"
+BUTTON_ACTIVE_BG_COLOR = "#0056B3"
+TEXT_COLOR_PRIMARY = "#212529"
+TEXT_COLOR_SECONDARY = "#6C757D"
+
+FONT_FAMILY = "Segoe UI"
+FONT_SIZE_NORMAL = 10
+FONT_SIZE_HEADER = 14
+FONT_SIZE_LABEL = 12
+
+CORES_PREDEFINIDAS = {
+    "Ciano": {"r": 0, "g": 1, "b": 1},
+    "Magenta": {"r": 1, "g": 0, "b": 1},
+    "Amarelo": {"r": 1, "g": 1, "b": 0},
+    "Vermelho": {"r": 1, "g": 0, "b": 0},
+    "Verde": {"r": 0, "g": 1, "b": 0},
+    "Azul": {"r": 0, "g": 0, "b": 1},
+    "Branco": {"r": 1, "g": 1, "b": 1},
+    "Preto": {"r": 0, "g": 0, "b": 0},
+    "Cinza": {"r": 0.5, "g": 0.5, "b": 0.5},
+    "Laranja": {"r": 1, "g": 0.647, "b": 0},
+    "Rosa": {"r": 1, "g": 0.752, "b": 0.796},
+    "Violeta": {"r": 0.933, "g": 0.510, "b": 0.933},
+    "Marrom": {"r": 0.647, "g": 0.165, "b": 0.165},
+    "Verde Lima": {"r": 0.196, "g": 0.804, "b": 0.196},
+    "Azul Céu": {"r": 0.529, "g": 0.808, "b": 0.922},
+    "Índigo": {"r": 0.294, "g": 0, "b": 0.510},
+    "Turquesa": {"r": 0.251, "g": 0.878, "b": 0.816},
+    "Coral": {"r": 1, "g": 0.498, "b": 0.314},
+    "Lavanda": {"r": 0.902, "g": 0.902, "b": 0.980}
+}
+
+class RGBTestApp:
+    def __init__(self, master):
+        self.master = master
+        self._setup_window()
+        self._setup_styles()
+        self._create_interface()
+        self._set_default_color()
+
+    def _setup_window(self):
+        self.master.title("🎨 Testador de Cores RGB - Conversão CMYK")
+        self.master.configure(bg=BG_COLOR)
+        self.master.resizable(True, True)
+        self.master.geometry("850x580")
+        self.master.minsize(700, 450)
+
+    def _setup_styles(self):
+        self.style = ttk.Style()
+        try:
+            self.style.theme_use('clam')
+        except tk.TclError:
+            self.style.theme_use('default')
+
+        self.style.configure('TLabel', font=(FONT_FAMILY, FONT_SIZE_NORMAL), 
+                            background=BG_COLOR, foreground=TEXT_COLOR_PRIMARY)
+        self.style.configure('Header.TLabel', font=(FONT_FAMILY, FONT_SIZE_HEADER, "bold"))
+        self.style.configure('Input.TLabel', font=(FONT_FAMILY, FONT_SIZE_LABEL))
+        
+        self.style.configure('TButton', font=(FONT_FAMILY, FONT_SIZE_NORMAL, "bold"),
+                            foreground=BUTTON_FG_COLOR, background=BUTTON_BG_COLOR, padding=(10, 8))
+        self.style.map('TButton', background=[('active', BUTTON_ACTIVE_BG_COLOR)])
+        
+        self.style.configure('TEntry', font=(FONT_FAMILY, FONT_SIZE_NORMAL),
+                            fieldbackground=INPUT_BG_COLOR, padding=(5, 5))
+        
+        self.style.configure('TFrame', background=BG_COLOR)
+        self.style.configure('White.TFrame', background=FRAME_BG_COLOR, relief="solid", borderwidth=1)
+        
+        self.style.configure('TLabelframe', background=FRAME_BG_COLOR)
+        self.style.configure('TLabelframe.Label', font=(FONT_FAMILY, FONT_SIZE_NORMAL, "bold"))
+
+    def _create_interface(self):
+        main_container = ttk.Frame(self.master)
+        main_container.pack(fill="both", expand=True, padx=20, pady=20)
+
+        self._create_header(main_container)
+        
+        content_frame = ttk.Frame(main_container)
+        content_frame.pack(fill="both", expand=True, pady=(15, 0))
+        
+        left_frame = ttk.Frame(content_frame, style='White.TFrame', padding=15)
+        left_frame.pack(side="left", fill="y", padx=(0, 15))
+        
+        right_frame = ttk.Frame(content_frame)
+        right_frame.pack(side="right", fill="both", expand=True)
+        
+        self._create_controls(left_frame)
+        self._create_visualization(right_frame)
+
+    def _create_header(self, parent):
+        header_frame = ttk.Frame(parent)
+        header_frame.pack(fill="x", pady=(0, 20))
+        
+        title_label = ttk.Label(header_frame, text="Testador de Cores RGB com CMYK",
+                               style='Header.TLabel')
+        title_label.pack()
+        
+        subtitle_label = ttk.Label(header_frame, 
+                                  text="Explore cores usando valores normalizados (0.0 - 1.0) e veja a conversão CMYK",
+                                  foreground=TEXT_COLOR_SECONDARY)
+        subtitle_label.pack(pady=(5, 0))
+
+    def _create_controls(self, parent):
+        rgb_frame = ttk.LabelFrame(parent, text="🎨 Valores RGB (0.0 - 1.0)", padding=(15, 15))
+        rgb_frame.pack(fill="x", pady=(0, 15))
+        
+        for i, (label, var_name) in enumerate([("R (Vermelho):", "r_var"), 
+                                              ("G (Verde):", "g_var"), 
+                                              ("B (Azul):", "b_var")]):
+            ttk.Label(rgb_frame, text=label, style='Input.TLabel').grid(row=i, column=0, sticky="w", pady=8)
+            setattr(self, var_name, tk.StringVar(value="0.0"))
+            entry = ttk.Entry(rgb_frame, textvariable=getattr(self, var_name), width=12)
+            entry.grid(row=i, column=1, padx=(15, 0), pady=8, sticky="ew")
+            entry.bind('<KeyRelease>', self._on_rgb_change)
+            entry.bind('<FocusOut>', self._validate_input)
+        
+        rgb_frame.grid_columnconfigure(1, weight=1)
+        
+        apply_btn = ttk.Button(rgb_frame, text="🔄 Aplicar Cor", command=self._update_color)
+        apply_btn.grid(row=3, column=0, columnspan=2, pady=(15, 5), sticky="ew")
+        
+        auto_btn = ttk.Button(rgb_frame, text="⚡ Atualização Automática", command=self._toggle_auto_update)
+        auto_btn.grid(row=4, column=0, columnspan=2, pady=(5, 0), sticky="ew")
+        
+        self.auto_update = False
+        self.auto_btn = auto_btn
+
+        preset_frame = ttk.LabelFrame(parent, text="🎯 Cores Predefinidas", padding=(15, 15))
+        preset_frame.pack(fill="x", pady=(0, 15))
+        
+        self.preset_var = tk.StringVar()
+        preset_combo = ttk.Combobox(preset_frame, textvariable=self.preset_var, 
+                                   values=list(CORES_PREDEFINIDAS.keys()), state="readonly", width=20)
+        preset_combo.pack(fill="x", pady=(0, 10))
+        preset_combo.bind('<<ComboboxSelected>>', self._on_preset_selected)
+        
+        load_preset_btn = ttk.Button(preset_frame, text="📥 Carregar Cor", command=self._load_preset)
+        load_preset_btn.pack(fill="x", pady=(0, 5))
+        
+        random_btn = ttk.Button(preset_frame, text="🎲 Cor Aleatória", command=self._random_color)
+        random_btn.pack(fill="x")
+
+        cmyk_frame = ttk.LabelFrame(parent, text="🖨️ Conversão CMYK", padding=(15, 15))
+        cmyk_frame.pack(fill="x")
+        
+        self.cmyk_label = ttk.Label(cmyk_frame, text="C:0% M:0% Y:0% K:100%", 
+                                   font=(FONT_FAMILY, FONT_SIZE_NORMAL, "bold"))
+        self.cmyk_label.pack(pady=(0, 8))
+        
+        self.cmyk_desc = ttk.Label(cmyk_frame, text="CMYK é o modelo usado em impressão profissional", 
+                                  foreground=TEXT_COLOR_SECONDARY, wraplength=200)
+        self.cmyk_desc.pack()
+
+    def _create_visualization(self, parent):
+        viz_frame = ttk.LabelFrame(parent, text="👁️ Visualização da Cor", padding=(20, 15))
+        viz_frame.pack(fill="both", expand=True)
+        
+        self.color_canvas = tk.Canvas(viz_frame, height=180, bg="#000000", 
+                                     relief="solid", borderwidth=3, highlightthickness=0)
+        self.color_canvas.pack(fill="x", pady=(0, 15))
+        
+        info_frame = ttk.Frame(viz_frame, style='White.TFrame', padding=15)
+        info_frame.pack(fill="x", pady=(0, 15))
+        
+        self.color_info = ttk.Label(info_frame, text="Cor: Preto", 
+                                   font=(FONT_FAMILY, FONT_SIZE_LABEL, "bold"))
+        self.color_info.pack(pady=(0, 8))
+        
+        info_grid = ttk.Frame(info_frame)
+        info_grid.pack(fill="x")
+        
+        self.rgb_255_info = ttk.Label(info_grid, text="RGB (0-255): R:0 G:0 B:0")
+        self.rgb_255_info.grid(row=0, column=0, sticky="w", pady=2)
+        
+        self.rgb_norm_info = ttk.Label(info_grid, text="RGB (0-1): R:0.0 G:0.0 B:0.0")
+        self.rgb_norm_info.grid(row=1, column=0, sticky="w", pady=2)
+        
+        self.hex_info = ttk.Label(info_grid, text="HEX: #000000", 
+                                 font=(FONT_FAMILY, FONT_SIZE_NORMAL, "bold"))
+        self.hex_info.grid(row=2, column=0, sticky="w", pady=2)
+        
+        copy_btn = ttk.Button(info_grid, text="📋 Copiar HEX", command=self._copy_hex)
+        copy_btn.grid(row=2, column=1, padx=(10, 0), sticky="e")
+        
+        info_grid.grid_columnconfigure(0, weight=1)
+
+        desc_frame = ttk.LabelFrame(viz_frame, text="📝 Descrição da Cor", padding=(15, 10))
+        desc_frame.pack(fill="both", expand=True)
+        
+        desc_scroll = ttk.Scrollbar(desc_frame)
+        desc_scroll.pack(side="right", fill="y")
+        
+        self.description_text = tk.Text(desc_frame, height=8, wrap="word", 
+                                       font=(FONT_FAMILY, FONT_SIZE_NORMAL),
+                                       relief="flat", bg=FRAME_BG_COLOR,
+                                       yscrollcommand=desc_scroll.set)
+        self.description_text.pack(fill="both", expand=True)
+        desc_scroll.config(command=self.description_text.yview)
+
+    def _toggle_auto_update(self):
+        self.auto_update = not self.auto_update
+        if self.auto_update:
+            self.auto_btn.configure(text="⚡ Auto: LIGADO")
+        else:
+            self.auto_btn.configure(text="⚡ Auto: DESLIGADO")
+
+    def _on_rgb_change(self, event=None):
+        if self.auto_update:
+            self.master.after(100, self._update_color)
+
+    def _validate_input(self, event=None):
+        try:
+            widget = event.widget
+            value = float(widget.get())
+            if not (0.0 <= value <= 1.0):
+                widget.configure(style='Error.TEntry')
+            else:
+                widget.configure(style='TEntry')
+        except ValueError:
+            widget.configure(style='Error.TEntry')
+
+    def _on_preset_selected(self, event=None):
+        self._load_preset()
+
+    def _load_preset(self):
+        selected = self.preset_var.get()
+        if selected and selected in CORES_PREDEFINIDAS:
+            cor = CORES_PREDEFINIDAS[selected]
+            self.r_var.set(str(cor["r"]))
+            self.g_var.set(str(cor["g"]))
+            self.b_var.set(str(cor["b"]))
+            self._update_color()
+
+    def _random_color(self):
+        import random
+        self.r_var.set(f"{random.random():.3f}")
+        self.g_var.set(f"{random.random():.3f}")
+        self.b_var.set(f"{random.random():.3f}")
+        self._update_color()
+
+    def _copy_hex(self):
+        try:
+            hex_value = self.hex_info.cget("text").split(": ")[1]
+            self.master.clipboard_clear()
+            self.master.clipboard_append(hex_value)
+            messagebox.showinfo("Sucesso", f"Código HEX {hex_value} copiado!")
+        except:
+            messagebox.showerror("Erro", "Não foi possível copiar o código HEX")
+
+    def _set_default_color(self):
+        self._update_color()
+
+    def _update_color(self):
+        try:
+            r_norm = float(self.r_var.get())
+            g_norm = float(self.g_var.get())
+            b_norm = float(self.b_var.get())
+            
+            if not all(0.0 <= val <= 1.0 for val in [r_norm, g_norm, b_norm]):
+                messagebox.showerror("Erro", "Valores RGB devem estar entre 0.0 e 1.0")
+                return
+            
+            r_255 = int(r_norm * 255)
+            g_255 = int(g_norm * 255)
+            b_255 = int(b_norm * 255)
+            
+            hex_color = f"#{r_255:02x}{g_255:02x}{b_255:02x}"
+            
+            self.color_canvas.configure(bg=hex_color)
+            
+            cmyk = self._rgb_to_cmyk(r_norm, g_norm, b_norm)
+            
+            self._update_color_info(r_norm, g_norm, b_norm, r_255, g_255, b_255, hex_color, cmyk)
+            
+        except ValueError:
+            messagebox.showerror("Erro", "Por favor, insira valores numéricos válidos")
+
+    def _rgb_to_cmyk(self, r, g, b):
+        k = 1 - max(r, g, b)
+        
+        if k == 1:
+            return {"c": 0, "m": 0, "y": 0, "k": 100}
+        
+        c = (1 - r - k) / (1 - k)
+        m = (1 - g - k) / (1 - k)
+        y = (1 - b - k) / (1 - k)
+        
+        return {
+            "c": round(c * 100),
+            "m": round(m * 100),
+            "y": round(y * 100),
+            "k": round(k * 100)
+        }
+
+    def _get_color_name(self, r, g, b):
+        min_distance = float('inf')
+        closest_color = "Cor Personalizada"
+        
+        for nome, valores in CORES_PREDEFINIDAS.items():
+            distance = math.sqrt(
+                (r - valores["r"])**2 + 
+                (g - valores["g"])**2 + 
+                (b - valores["b"])**2
+            )
+            if distance < min_distance and distance < 0.1:
+                min_distance = distance
+                closest_color = nome
+        
+        return closest_color
+
+    def _update_color_info(self, r_norm, g_norm, b_norm, r_255, g_255, b_255, hex_color, cmyk):
+        color_name = self._get_color_name(r_norm, g_norm, b_norm)
+        self.color_info.configure(text=f"Cor: {color_name}")
+        
+        self.rgb_255_info.configure(text=f"RGB (0-255): R:{r_255} G:{g_255} B:{b_255}")
+        self.rgb_norm_info.configure(text=f"RGB (0-1): R:{r_norm} G:{g_norm} B:{b_norm}")
+        
+        self.hex_info.configure(text=f"HEX: {hex_color.upper()}")
+        
+        self.cmyk_label.configure(text=f"C:{cmyk['c']}% M:{cmyk['m']}% Y:{cmyk['y']}% K:{cmyk['k']}%")
+        
+        self._update_description(color_name, r_norm, g_norm, b_norm, cmyk)
+
+    def _update_description(self, color_name, r, g, b, cmyk):
+        self.description_text.delete(1.0, tk.END)
+        
+        descriptions = {
+            "Ciano": "Cor vibrante formada pela mistura de verde e azul. É uma das cores primárias no modelo CMYK usado em impressão.",
+            "Magenta": "Cor intensa formada pela mistura de vermelho e azul. É uma cor primária no modelo CMYK.",
+            "Amarelo": "Cor primária brilhante e energética. No modelo CMYK, é uma das três cores primárias junto com ciano e magenta.",
+            "Vermelho": "Cor primária quente e vibrante, frequentemente associada a paixão e energia.",
+            "Verde": "Cor primária no modelo RGB, associada à natureza e tranquilidade.",
+            "Azul": "Cor primária fria, frequentemente associada ao céu e ao mar.",
+            "Branco": "Presença de todas as cores no modelo RGB, representando pureza e simplicidade.",
+            "Preto": "Ausência de cor no modelo RGB, representando elegância e sofisticação.",
+            "Cinza": "Cor neutra, equilibrada entre o preto e o branco.",
+            "Laranja": "Cor quente e energética, mistura de vermelho e amarelo.",
+            "Rosa": "Cor suave e delicada, mistura de vermelho e branco.",
+            "Violeta": "Cor misteriosa e elegante, mistura de azul e vermelho."
+        }
+        
+        if color_name in descriptions:
+            desc = descriptions[color_name]
+        else:
+            dominant = max(r, g, b)
+            if dominant == r:
+                base = "vermelho"
+            elif dominant == g:
+                base = "verde"
+            else:
+                base = "azul"
+            desc = f"Cor personalizada com base predominante em {base}."
+            
+        desc += f"\n\nComposição RGB: {r:.1%} vermelho, {g:.1%} verde, {b:.1%} azul."
+        desc += f"\nModelo CMYK (impressão): {cmyk['c']}% ciano, {cmyk['m']}% magenta, {cmyk['y']}% amarelo, {cmyk['k']}% preto."
+        
+        self.description_text.insert(1.0, desc)
+
+if __name__ == '__main__':
+    root = tk.Tk()
+    app = RGBTestApp(root)
+    root.mainloop()
